@@ -1,6 +1,6 @@
 # Automatiza una pastelería con n8n: del encargo al cierre de caja
 
-Clase práctica para aprender, paso a paso, a hacer lo que pide el **nivel esencial** del proyecto de la zapatería. Aquí se construye con un caso parecido (una pastelería con encargos de tartas) para que, cuando llegue el proyecto, ya hayas hecho cada pieza una vez.
+Clase práctica para aprender, paso a paso, a automatizar un negocio pequeño con n8n: desde encender n8n con Docker hasta tener flujos reales funcionando, con un agente de IA ayudando.
 
 **Duración:** dos sesiones, unas 3 h 50 min en total.
 
@@ -37,16 +37,14 @@ Ya tiene una **app** (carpeta `app/`) que guarda los encargos y los pagos. Nosot
 | Item | Un ingrediente que pasa de paso en paso | Un encargo, un pago |
 | Credencial | La llave guardada para usar un servicio | La clave de la app o el acceso al correo |
 
-### Cómo se conecta con el proyecto de la zapatería
+### Los cuatro flujos que vas a construir
 
-| Aquí (pastelería) | En el proyecto (zapatería) | Historia de usuario |
+| Flujo | Qué hace | Sesión |
 |---|---|---|
-| Flujo 01 · confirmar encargo y recibos | Flujos 1 y 2 · confirmación de apartado y recibo de abono | HU-01 y HU-02 |
-| Flujo 03 · pagos por correo con IA | Flujo 3 · abonos a distancia | HU-03 |
-| Flujo 02 · cierre diario | Flujo 5 · cierre diario | HU-04 |
-| Flujo 00 · avisar de errores | Flujo 8 · Error Workflow | HU-05 |
-
-La estructura es idéntica y cambian los nombres: un *encargo* es un *apartado*, un *pago* es un *abono* y "pagado" es "liquidado".
+| **01** Eventos de la pastelería | Cuando la app avisa, manda al cliente la confirmación del encargo y los recibos de pago | 1 |
+| **02** Cierre diario | Cada noche suma lo cobrado en el día y se lo manda a Marisa | 1 |
+| **00** Avisar de errores | Si un flujo falla, avisa a Marisa con el motivo | 2 |
+| **03** Pagos por correo | Lee los avisos del banco con IA y registra cada pago en su encargo | 2 |
 
 ---
 
