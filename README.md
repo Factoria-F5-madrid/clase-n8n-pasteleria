@@ -64,7 +64,7 @@ curl -X POST http://localhost:5678/webhook/pasteleria \
 
    > Para que el aviso salga, el flujo `00` tiene que estar **publicado**. Si no lo está, n8n lo anota en sus registros (`Workflow ... is not active`) y no avisa a nadie.
 
-> **Seguridad:** el aviso lleva el nombre del flujo, el paso y el mensaje, **nunca** claves ni contraseñas. Revisa el correo antes de dar el flujo por bueno (HU-05).
+> **Seguridad:** el aviso lleva el nombre del flujo, el paso y el mensaje, **nunca** claves ni contraseñas. Revisa el correo antes de dar el flujo por bueno.
 
 **Checkpoint:** un fallo provocado genera un correo de aviso.
 
@@ -72,7 +72,7 @@ curl -X POST http://localhost:5678/webhook/pasteleria \
 
 ## Paso 7 — Flujo 03: leer los correos del banco con IA (50 min)
 
-Es el flujo difícil y el más parecido al del proyecto. **Objetivo:** cuando llega un aviso del banco de que un cliente ha pagado por Bizum o transferencia, registrar el pago en el encargo correcto, **sin que Marisa apunte nada**.
+Es el flujo más difícil de la clase. **Objetivo:** cuando llega un aviso del banco de que un cliente ha pagado por Bizum o transferencia, registrar el pago en el encargo correcto, **sin que Marisa apunte nada**.
 
 > **La regla de oro: la IA lee, el código decide.** La IA solo sirve para convertir un texto desordenado (el correo) en datos ordenados (quién, cuánto, para qué). **Qué encargo es y si se puede registrar lo decide un nodo de código con reglas claras**, porque una IA a veces se equivoca y un pago mal asignado es dinero mal apuntado.
 
@@ -85,7 +85,7 @@ Es el flujo difícil y el más parecido al del proyecto. **Objetivo:** cuando ll
                                                                               no ──▶ Correo a Marisa: "revisa esto"
 ```
 
-En el proyecto real el disparador será un **correo nuevo** (Gmail o IMAP). Aquí usamos un **formulario donde pegas el texto del correo**, que es más fácil de probar y no necesita ninguna cuenta. Cambiarlo después es sustituir un solo nodo.
+En un negocio real el disparador sería un **correo nuevo** (Gmail o IMAP). Aquí usamos un **formulario donde pegas el texto del correo**, que es más fácil de probar y no necesita ninguna cuenta. Cambiarlo después es sustituir un solo nodo.
 
 ### Los correos de prueba
 
@@ -232,13 +232,13 @@ Pega cada uno de los 7 correos (restableciendo los datos si repites) y comprueba
 
 Cuando funcionen, **publica** el flujo y asígnale `00 Avisar de errores` como *Error workflow*.
 
-**Checkpoint:** los 7 casos dan el resultado de la tabla. Ya cubre HU-03.
+**Checkpoint:** los 7 casos dan el resultado de la tabla. Marisa ya no apunta a mano los pagos que llegan por el banco.
 
 ---
 
 ## Paso 8 — Repetir un flujo con el agente (30 min)
 
-Hasta aquí has construido a mano para entender cada pieza. En el proyecto trabajarás con un agente de IA, así que ahora le pides **un flujo nuevo** y tú haces de *tech lead*: defines, revisas y decides.
+Hasta aquí has construido a mano para entender cada pieza. Ahora trabajarás con un agente de IA: le pides **un flujo nuevo** y tú haces de *tech lead*: defines, revisas y decides.
 
 ### 8.1 Dale contexto: `AGENTS.md`
 
@@ -324,22 +324,9 @@ git push -u origin flujos-esenciales
 
 ---
 
-## 11. Qué cambia en el proyecto de la zapatería
+## 11. Para cerrar
 
-Cuando llegues al proyecto, lo que has hecho aquí se repite con otro vocabulario y alguna regla más:
-
-| Aquí | En la zapatería |
-|---|---|
-| Encargo | Apartado |
-| Pago | Abono |
-| Estado `pagado` | Estado `liquidado` |
-| Eventos `encargo.creado` y `pago.registrado` | Eventos `apartado.creado` y `abono.registrado` |
-| Señal mínima 10 €, entrega en 30 días | Abono inicial mínimo 5 €, plazo de 90 días |
-| La app no tiene pantallas | La app tiene pantallas y un botón de descargar Excel |
-| Sin vencimientos | Apartados fuera de plazo que se vencen y generan un **vale** (nivel medio) |
-| Un correo de ejemplo se pega en un formulario | El disparador real es un correo nuevo (Gmail o IMAP) |
-
-Antes de pasar al proyecto, comprueba que puedes **explicar con tus palabras**:
+Comprueba que puedes **explicar con tus palabras**:
 
 1. ¿Por qué la app avisa a n8n con un webhook, en lugar de que n8n pregunte cada minuto?
 2. ¿Por qué en el flujo 03 la IA no decide a qué encargo va cada pago?
