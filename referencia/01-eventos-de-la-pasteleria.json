@@ -1,0 +1,252 @@
+{
+  "name": "01 Eventos de la pastelería",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pasteleria",
+        "options": {}
+      },
+      "id": "00000000-0000-0000-0000-000000000001",
+      "name": "Evento de la pastelería",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "00000000-0000-0000-0000-0000000003e7"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-0000-0000-000000000002",
+                    "leftValue": "={{ $json.body.evento }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "encargo.creado"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "encargo.creado"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-0000-0000-000000000003",
+                    "leftValue": "={{ $json.body.evento }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "pago.registrado"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pago.registrado"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-0000-0000-000000000004",
+      "name": "Según el evento",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        240,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "pasteleria@lacuchara.example",
+        "toEmail": "={{ $json.body.datos.email }}",
+        "subject": "=Tu encargo #{{ $json.body.datos.id }} está confirmado",
+        "emailFormat": "text",
+        "text": "=Hola {{ $json.body.datos.cliente }},\n\nHemos apuntado tu encargo: {{ $json.body.datos.tarta }} para {{ $json.body.datos.raciones }} raciones.\n\nPrecio: {{ $json.body.datos.precio.toFixed(2) }} €\nPagado: {{ $json.body.datos.pagado.toFixed(2) }} €\nPendiente: {{ $json.body.datos.pendiente.toFixed(2) }} €\nEntrega: {{ $json.body.datos.fecha_entrega }}\n\nPastelería La Cuchara",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "00000000-0000-0000-0000-000000000005",
+      "name": "Confirmar encargo",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        520,
+        80
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cred-smtp-0001",
+          "name": "Mailpit"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-0000-0000-000000000006",
+              "leftValue": "={{ $json.body.datos.estado }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "pagado"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-0000-0000-000000000007",
+      "name": "¿Queda pagado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        520,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "pasteleria@lacuchara.example",
+        "toEmail": "={{ $json.body.datos.email }}",
+        "subject": "=Tu encargo #{{ $json.body.datos.id }} está pagado",
+        "emailFormat": "text",
+        "text": "=Hola {{ $json.body.datos.cliente }},\n\nHemos recibido {{ $json.body.datos.importe.toFixed(2) }} € y tu encargo ya está pagado por completo. Te esperamos el {{ $json.body.datos.fecha_entrega }} para recoger tu {{ $json.body.datos.tarta }}.\n\nPastelería La Cuchara",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "00000000-0000-0000-0000-000000000008",
+      "name": "Tarta lista para recoger",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        780,
+        240
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cred-smtp-0001",
+          "name": "Mailpit"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "pasteleria@lacuchara.example",
+        "toEmail": "={{ $json.body.datos.email }}",
+        "subject": "=Recibo de tu pago del encargo #{{ $json.body.datos.id }}",
+        "emailFormat": "text",
+        "text": "=Hola {{ $json.body.datos.cliente }},\n\nHemos recibido {{ $json.body.datos.importe.toFixed(2) }} €. Te quedan por pagar {{ $json.body.datos.pendiente.toFixed(2) }} € antes de la entrega ({{ $json.body.datos.fecha_entrega }}).\n\nPastelería La Cuchara",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "00000000-0000-0000-0000-000000000009",
+      "name": "Recibo de pago",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        780,
+        400
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cred-smtp-0001",
+          "name": "Mailpit"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Evento de la pastelería": {
+      "main": [
+        [
+          {
+            "node": "Según el evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Según el evento": {
+      "main": [
+        [
+          {
+            "node": "Confirmar encargo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Queda pagado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Queda pagado?": {
+      "main": [
+        [
+          {
+            "node": "Tarta lista para recoger",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Recibo de pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "AvisarErrores001"
+  },
+  "pinData": {}
+}

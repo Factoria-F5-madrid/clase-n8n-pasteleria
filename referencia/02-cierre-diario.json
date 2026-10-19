@@ -1,0 +1,143 @@
+{
+  "name": "02 Cierre diario",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      },
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Cada noche a las 21:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://pasteleria:8000/api/pagos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "desde",
+              "value": "={{ $now.format('yyyy-MM-dd') }}"
+            },
+            {
+              "name": "hasta",
+              "value": "={{ $now.format('yyyy-MM-dd') }}"
+            }
+          ]
+        }
+      },
+      "id": "00000000-0000-0000-0000-00000000000b",
+      "name": "Pagos de hoy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-api-0001",
+          "name": "API Pastelería"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const pagos = $input.all().map(i => i.json).filter(p => p.importe);\nconst porForma = {};\nfor (const p of pagos) porForma[p.forma_pago] = (porForma[p.forma_pago] || 0) + p.importe;\nconst total = pagos.reduce((s, p) => s + p.importe, 0);\nconst lineas = Object.entries(porForma).map(([forma, importe]) => `  ${forma}: ${importe.toFixed(2)} €`);\nreturn [{ json: {\n  fecha: $now.toFormat('dd/MM/yyyy'),\n  total: total.toFixed(2),\n  resumen: pagos.length ? lineas.join('\\n') : '  (hoy no se ha cobrado nada)',\n  n: pagos.length,\n} }];"
+      },
+      "id": "00000000-0000-0000-0000-00000000000c",
+      "name": "Sumar por forma de pago",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "pasteleria@lacuchara.example",
+        "toEmail": "marisa@lacuchara.example",
+        "subject": "=Cierre de caja del {{ $json.fecha }}",
+        "emailFormat": "text",
+        "text": "=Hola Marisa,\n\nHoy se han cobrado {{ $json.total }} € ({{ $json.n }} pagos):\n\n{{ $json.resumen }}\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "00000000-0000-0000-0000-00000000000d",
+      "name": "Enviar cierre a la dueña",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        200
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cred-smtp-0001",
+          "name": "Mailpit"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cada noche a las 21:00": {
+      "main": [
+        [
+          {
+            "node": "Pagos de hoy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pagos de hoy": {
+      "main": [
+        [
+          {
+            "node": "Sumar por forma de pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sumar por forma de pago": {
+      "main": [
+        [
+          {
+            "node": "Enviar cierre a la dueña",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "AvisarErrores001"
+  },
+  "pinData": {}
+}
