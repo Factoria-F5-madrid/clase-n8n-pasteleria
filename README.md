@@ -258,7 +258,7 @@ Prueba el IF con dos `curl` (con *Listen for test event* activo antes de cada un
 4. En la ficha del encargo, **Registrar pago** de 10 €: llega el **recibo**. Registra otros 10 €: ahora faltan 10 € todavía. Registra los últimos 10 €: el encargo queda pagado y llega **«Tu encargo está pagado»**.
 5. Mira la pestaña **Executions** del flujo: cada aviso es una ejecución, con sus datos.
 
-**Checkpoint:** tres correos distintos en Mailpit y tres ejecuciones verdes. Este flujo es el 80 % de las historias HU-01 y HU-02.
+**Checkpoint:** tres correos distintos en Mailpit y tres ejecuciones verdes. Con este flujo, cada encargo y cada pago avisan al cliente solos.
 
 ---
 
@@ -319,7 +319,7 @@ Hoy se han cobrado {{ $json.total }} € ({{ $json.n }} pagos):
 8. **Comprueba que el total cuadra** con la app: en la pantalla **Pagos** (http://localhost:8000/pagos) suma a mano los de hoy.
 9. Pulsa **Publish** para que se ejecute cada noche.
 
-**Checkpoint:** correo de cierre con importes que coinciden con la app. Ya cubre HU-04.
+**Checkpoint:** correo de cierre con importes que coinciden con la app. Marisa ya no tiene que sumar a mano.
 
 ---
 
