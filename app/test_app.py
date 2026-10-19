@@ -72,3 +72,8 @@ def test_reset_vuelve_a_los_datos_de_ejemplo():
     assert TestClient(app).post("/api/reset").status_code == 401
     assert c.post("/api/reset").json() == {"ok": True}
     assert len(c.get("/api/encargos").json()) == 8 and c.get("/api/encargos/1").json()["pendiente"] == 12
+
+
+def test_swagger_muestra_authorize():
+    esquemas = TestClient(app).get("/openapi.json").json()["components"]["securitySchemes"]
+    assert any(e["type"] == "apiKey" and e["name"] == "X-API-Key" for e in esquemas.values())
