@@ -1,0 +1,13 @@
+De: Banco Ejemplo <notificaciones@bancoejemplo.example>
+Para: pasteleria@lacuchara.example
+Asunto: Has recibido un Bizum de 10,00 €
+
+Hola, PASTELERIA LA CUCHARA:
+
+Has recibido un Bizum.
+
+Importe: 10,00 EUR
+Ordenante: LAURA ORTEGA
+Concepto: red velvet
+
+El importe ya está disponible en tu cuenta terminada en 4821.

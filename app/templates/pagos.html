@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, euros, paginacion %}
+{% set seccion = "pagos" %}
+{% block content %}
+<div class="page-head"><h1>Pagos</h1></div>
+
+<section class="card" aria-label="Historial de pagos">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Fecha</th><th>Encargo</th><th>Forma de pago</th><th class="num">Importe</th></tr></thead>
+      <tbody>
+      {% for p in pagos %}
+        <tr>
+          <td>{{ p.fecha }}</td>
+          <td><a class="row-link" href="/encargos/{{ p.encargo_id }}">#{{ p.encargo_id }} · {{ p.cliente }}</a></td>
+          <td>{{ p.forma_pago|capitalize }}</td>
+          <td class="num">{{ euros(p.importe) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if not pagos %}<div class="empty">Todavía no hay pagos.</div>{% endif %}
+  </div>
+  {{ paginacion(pagina, paginas, total, "/pagos?") }}
+</section>
+{% endblock %}
