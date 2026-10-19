@@ -11,8 +11,10 @@ import logging
 import os
 import sqlite3
 import urllib.parse
+import urllib.error
 import urllib.request
-from datetime import date, timedelta
+from collections import deque
+from datetime import date, datetime, timedelta
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Form, HTTPException, Request
 from fastapi.security import APIKeyHeader
@@ -67,15 +69,26 @@ def get_encargo(encargo_id):
     return found[0]
 
 
+AVISOS = deque(maxlen=20)  # los últimos avisos enviados a n8n, para verlos en /avisos
+
+
 def notify(evento, datos):
-    """Avisa a n8n. Si n8n no responde, la pastelería sigue funcionando."""
+    """Avisa a n8n y apunta el aviso para poder verlo. Si n8n no responde, la pastelería sigue funcionando."""
+    cuerpo = json.dumps({"evento": evento, "datos": datos}, ensure_ascii=False, indent=2)
+    aviso = {"hora": datetime.now().strftime("%H:%M:%S"), "evento": evento, "json": cuerpo, "ok": False}
+    AVISOS.appendleft(aviso)
     if not N8N_WEBHOOK_URL:
+        aviso["resultado"] = "No se ha enviado: N8N_WEBHOOK_URL está vacío en el .env"
         return
-    body = json.dumps({"evento": evento, "datos": datos}).encode()
-    req = urllib.request.Request(N8N_WEBHOOK_URL, body, {"Content-Type": "application/json"})
+    req = urllib.request.Request(N8N_WEBHOOK_URL, cuerpo.encode(), {"Content-Type": "application/json"})
     try:
-        urllib.request.urlopen(req, timeout=5)
+        r = urllib.request.urlopen(req, timeout=5)
+        aviso["ok"], aviso["resultado"] = True, f"Enviado. n8n respondió {r.status}"
+    except urllib.error.HTTPError as e:
+        pista = " (ningún flujo publicado escucha esta dirección)" if e.code == 404 else ""
+        aviso["resultado"] = f"n8n respondió {e.code}{pista}"
     except Exception as e:
+        aviso["resultado"] = f"No se pudo llegar a n8n: {e}"
         log.warning("No se pudo avisar a n8n (%s): %s", evento, e)
 
 
@@ -286,6 +299,11 @@ def ui_pagos(request: Request, pagina: int = 1):
     pagos = rows("SELECT p.*, e.cliente FROM pagos p JOIN encargos e ON e.id = p.encargo_id "
                  f"ORDER BY p.fecha DESC, p.id DESC LIMIT {POR_PAGINA} OFFSET {offset}")
     return page(request, "pagos.html", pagos=pagos, total=total, pagina=pagina, paginas=paginas)
+
+
+@app.get("/avisos", include_in_schema=False)
+def ui_avisos(request: Request):
+    return page(request, "avisos.html", avisos=list(AVISOS), url=N8N_WEBHOOK_URL)
 
 
 @app.get("/excel", include_in_schema=False)

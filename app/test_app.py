@@ -77,3 +77,12 @@ def test_reset_vuelve_a_los_datos_de_ejemplo():
 def test_swagger_muestra_authorize():
     esquemas = TestClient(app).get("/openapi.json").json()["components"]["securitySchemes"]
     assert any(e["type"] == "apiKey" and e["name"] == "X-API-Key" for e in esquemas.values())
+
+
+def test_avisos_a_n8n_se_ven_en_pantalla():
+    import main
+
+    c.post("/api/encargos", json=NUEVO)  # con N8N_WEBHOOK_URL vacío el aviso no sale, pero queda apuntado
+    assert main.AVISOS[0]["evento"] == "encargo.creado" and "vacío" in main.AVISOS[0]["resultado"]
+    r = c.get("/avisos")
+    assert r.status_code == 200 and "encargo.creado" in r.text and "Ver JSON" in r.text

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon %}
+{% set seccion = "avisos" %}
+{% block content %}
+<div class="page-head"><h1>Avisos a n8n</h1></div>
+
+<div class="card card-body stack" style="margin-bottom:16px">
+  <p style="margin:0">Cada vez que se crea un encargo o se registra un pago, la app envía un <strong>aviso</strong> (un <em>webhook</em>) a n8n. Aquí ves los últimos 20 y si n8n los recibió.</p>
+  <p class="muted" style="margin:0">Dirección a la que avisa: <code>{{ url or "(vacía)" }}</code></p>
+</div>
+
+<section class="card" aria-label="Últimos avisos">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Hora</th><th>Evento</th><th>Resultado</th><th>Contenido</th></tr></thead>
+      <tbody>
+      {% for a in avisos %}
+        <tr>
+          <td>{{ a.hora }}</td>
+          <td><code>{{ a.evento }}</code></td>
+          <td>{% if a.ok %}<span class="badge badge-pagado">{{ a.resultado }}</span>{% else %}<span class="badge badge-warn">{{ a.resultado }}</span>{% endif %}</td>
+          <td><details class="aviso"><summary>Ver JSON</summary><pre class="json">{{ a.json }}</pre></details></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if not avisos %}<div class="empty">Todavía no se ha enviado ningún aviso. Crea un encargo o registra un pago y vuelve aquí.</div>{% endif %}
+  </div>
+</section>
+{% endblock %}
