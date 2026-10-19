@@ -2,27 +2,65 @@
 
 > Estás en la rama **`sesion-1`**. La vista general de la clase está en `main`. Al terminar, pasa a la rama `sesion-2`.
 
-**Duración:** ~1 h 45 min · **Pasos 1 a 5** · **Flujos 01 y 02**
+**Duración:** ~1 h 50 min · **Pasos 1 a 5** · **Flujos 01 y 02**
 
 **Antes de empezar:** Docker abierto, Git, y tu API key de Groq creada (ver `main`, apartado 2). Si no tienes el repositorio clonado:
 
 ```bash
-git clone <url-de-este-repositorio> clase-n8n-pasteleria && cd clase-n8n-pasteleria && git switch sesion-1
+git clone https://github.com/Factoria-F5-madrid/clase-n8n-pasteleria.git clase-n8n-pasteleria && cd clase-n8n-pasteleria && git switch sesion-1
 ```
 
 **Qué vas a hacer:** levantar la pastelería y n8n, conectarlos y construir dos flujos: uno que **reacciona** cuando la app avisa (confirmar el encargo y mandar recibos) y otro que se **despierta solo** cada noche (el cierre de caja).
 
 ---
 
-## Paso 1 — Levantar todo con Docker (10 min)
+## Paso 1 — Levantar n8n (y la pastelería) en local con Docker (15 min)
+
+**La idea en simple.** Un **contenedor** de Docker es una cocina portátil ya montada: trae dentro el programa con todo lo que necesita, así que **no instalas n8n ni Python en tu ordenador**. Lo enciendes, lo usas y, si lo apagas, tu ordenador queda como estaba.
+
+### 1.1 Comprueba que Docker funciona
+
+1. Abre **Docker Desktop** y espera a que abajo a la izquierda ponga *Engine running* (la primera vez tarda un minuto).
+2. En una terminal:
 
 ```bash
-cd clase-guia-n8n-pasteleria
+docker --version
+docker compose version
+docker ps
+```
+
+Los dos primeros muestran una versión y el tercero una tabla (vacía si no tienes nada en marcha). Si sale `Cannot connect to the Docker daemon`, Docker Desktop no está abierto del todo.
+
+### 1.2 n8n solo, con un único comando (3 min)
+
+Para ver lo mínimo que hace falta, arranca n8n a pelo:
+
+```bash
+docker run -it --rm --name n8n -p 5678:5678 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n
+```
+
+| Parte del comando | En simple |
+|---|---|
+| `docker run` | Enciende un contenedor |
+| `-it --rm` | Te deja ver lo que pasa dentro, y lo borra al apagarlo |
+| `--name n8n` | Le pone nombre |
+| `-p 5678:5678` | Abre la puerta: lo que haya en el puerto 5678 del contenedor se ve en `http://localhost:5678` |
+| `-v n8n_data:/home/node/.n8n` | Una **caja de guardado** (volumen): tus flujos y credenciales viven ahí y sobreviven al apagarlo |
+| `docker.n8n.io/n8nio/n8n` | La imagen: la receta de la cocina portátil. La primera vez la descarga |
+
+Cuando el texto diga `Editor is now accessible via: http://localhost:5678`, abre esa dirección: ya tienes n8n. **Páralo con `Ctrl + C`** antes de seguir: lo vamos a encender de otra forma y los dos usarían el mismo puerto.
+
+### 1.3 Todo junto con `docker compose`
+
+Nosotros necesitamos **tres piezas** a la vez (la app de la pastelería, n8n y el buzón Mailpit), así que en vez de tres comandos usamos un archivo, `docker-compose.yml`, que las describe y las enciende juntas:
+
+```bash
+cd clase-n8n-pasteleria
 cp .env.example .env
 docker compose up -d
 ```
 
-Se levantan tres contenedores (la app tiene dos direcciones):
+La primera vez construye la app y descarga las imágenes (unos minutos). `-d` lo deja funcionando **en segundo plano**.
 
 | Servicio | URL | Para qué |
 |---|---|---|
@@ -31,9 +69,21 @@ Se levantan tres contenedores (la app tiene dos direcciones):
 | n8n | http://localhost:5678 | Donde construimos los flujos |
 | Mailpit | http://localhost:8025 | El buzón donde llegan todos los correos |
 
-La primera vez que abras n8n te pide **crear una cuenta de propietario** (es local, solo para tu instancia). Pon lo que quieras. Después salen dos ventanas opcionales (un cuestionario y una oferta de licencia): cierra la primera con **Get started** sin responder y la segunda con **Skip**.
+### 1.4 Primera vez en n8n
 
-**Checkpoint:** las cuatro URLs abren. En Mailpit todavía no hay ningún correo.
+n8n te pide **crear una cuenta de propietario** (es local, solo para tu instancia). Pon lo que quieras. Después salen dos ventanas opcionales (un cuestionario y una oferta de licencia): cierra la primera con **Get started** sin responder y la segunda con **Skip**.
+
+### 1.5 Comandos que vas a usar (guárdalos)
+
+| Quiero… | Comando |
+|---|---|
+| Ver qué está encendido | `docker compose ps` |
+| Ver lo que escribe n8n (para buscar errores) | `docker compose logs -f n8n` (sal con `Ctrl + C`) |
+| Apagar todo **sin perder nada** | `docker compose stop` (y `docker compose start` para volver) |
+| Apagar y quitar los contenedores | `docker compose down` (tus flujos se conservan) |
+| Empezar **de cero** | `docker compose down -v` ⚠️ borra los volúmenes: **tus flujos y credenciales desaparecen** |
+
+**Checkpoint:** las cuatro URLs abren. `docker compose ps` muestra tres servicios `running`. En Mailpit todavía no hay ningún correo.
 
 ---
 
@@ -297,6 +347,7 @@ Hoy se han cobrado {{ $json.total }} € ({{ $json.n }} pagos):
 
 | Síntoma | Causa | Solución |
 |---|---|---|
+| `port is already allocated` al hacer `docker compose up` | Otro programa (u otro n8n) ya usa el puerto 5678, 8000 u 8025 | Ciérralo, o cambia el número de la **izquierda** en `docker-compose.yml` (por ejemplo `5679:5678`) |
 | La app crea el encargo pero no llega ningún correo | El flujo 01 no está **publicado** (la app usa la Production URL) | Pulsa **Publish** |
 | `The requested webhook ... is not registered` | Igual que el anterior, o has usado `/webhook-test/` fuera de *Listen for test event* | Publicar, o pulsar *Listen for test event* antes del `curl` |
 | `ECONNREFUSED 127.0.0.1` o `localhost` no responde (SMTP o API) | Estás usando `localhost` dentro de n8n | Usa `mailpit` y `http://pasteleria:8000` |
