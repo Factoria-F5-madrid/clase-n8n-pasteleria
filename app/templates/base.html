@@ -115,6 +115,8 @@
     .stats { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
     .stat .label { font-size: .85rem; color: var(--muted); font-weight: 600; }
     .stat .value { font-family: Rubik, sans-serif; font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    pre.json { margin: 0; padding: 12px 16px; background: var(--surface-2); border-radius: 8px; overflow-x: auto; font-size: .85rem; }
+    details.aviso summary { cursor: pointer; min-height: 32px; font-weight: 700; color: var(--primary); }
     .progress { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
     .progress > span { display: block; height: 100%; background: var(--primary); }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -128,6 +130,7 @@
     <nav class="nav" aria-label="Principal">
       <a href="/" {% if seccion == "encargos" %}aria-current="page"{% endif %}>{{ icon("encargos") }} Encargos</a>
       <a href="/pagos" {% if seccion == "pagos" %}aria-current="page"{% endif %}>{{ icon("ventas") }} Pagos</a>
+      <a href="/avisos" {% if seccion == "avisos" %}aria-current="page"{% endif %}>{{ icon("aviso") }} Avisos a n8n</a>
       <a href="/excel">{{ icon("excel") }} Descargar Excel</a>
       <a href="/docs">{{ icon("api") }} API</a>
     </nav>
