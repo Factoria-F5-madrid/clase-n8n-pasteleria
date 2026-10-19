@@ -124,7 +124,20 @@ Es lo que usará n8n. Pulsa **Authorize** (arriba a la derecha) y escribe el val
 
 Hay **dos eventos**: `encargo.creado` y `pago.registrado`. Ahora mismo nadie los escucha: eso lo arreglamos en el Paso 4.
 
-**Checkpoint:** has creado un encargo desde la pantalla, has visto la lista en Swagger y has entendido que la app avisa pero no envía correos.
+**¿Dónde veo ese aviso?** En la pantalla **Avisos a n8n** (http://localhost:8000/avisos, está en el menú de arriba). La app apunta cada aviso que envía: la hora, el evento, el JSON completo (pulsa **Ver JSON**) y si n8n lo recibió.
+
+1. Ve a **Avisos a n8n**: de momento está vacía.
+2. Crea un encargo desde la pantalla (o registra un pago) y vuelve a **Avisos a n8n**.
+3. Aparece el aviso, con este resultado: **«n8n respondió 404 (ningún flujo publicado escucha esta dirección)»**. Es lo normal: la app llama a la puerta de n8n, pero todavía no hay ningún flujo dentro que abra. Cuando construyamos el flujo, el mismo aviso dirá **«Enviado. n8n respondió 200»**.
+
+| Lo que dice el resultado | Qué significa |
+|---|---|
+| `Enviado. n8n respondió 200` | n8n lo recibió y un flujo lo atendió |
+| `n8n respondió 404 …` | n8n está encendido, pero ningún flujo **publicado** escucha esa dirección |
+| `No se pudo llegar a n8n …` | n8n no responde: está apagado o la dirección del `.env` está mal |
+| `No se ha enviado: N8N_WEBHOOK_URL está vacío` | Falta la dirección en el `.env` |
+
+**Checkpoint:** has creado un encargo desde la pantalla, has visto su aviso en **Avisos a n8n** (con el 404) y has entendido que la app avisa pero no envía correos.
 
 ---
 
@@ -254,7 +267,7 @@ Prueba el IF con dos `curl` (con *Listen for test event* activo antes de cada un
 
 1. Pulsa **Publish** (arriba a la derecha). Un flujo publicado escucha la **Production URL** sin que tengas que pulsar nada.
 2. En la app (http://localhost:8000) pulsa **Nuevo encargo**. Pon tu nombre, un correo inventado (`tu@correo.example`), una tarta de 30 €, una fecha de entrega entre mañana y dentro de 30 días y una señal de 10 €.
-3. En Mailpit llega **«Tu encargo #9 está confirmado»**.
+3. En la app, abre **Avisos a n8n**: el aviso nuevo dice **«Enviado. n8n respondió 200»** (antes decía 404). En Mailpit llega **«Tu encargo #9 está confirmado»**.
 4. En la ficha del encargo, **Registrar pago** de 10 €: llega el **recibo**. Registra otros 10 €: ahora faltan 10 € todavía. Registra los últimos 10 €: el encargo queda pagado y llega **«Tu encargo está pagado»**.
 5. Mira la pestaña **Executions** del flujo: cada aviso es una ejecución, con sus datos.
 
@@ -348,7 +361,7 @@ Hoy se han cobrado {{ $json.total }} € ({{ $json.n }} pagos):
 | Síntoma | Causa | Solución |
 |---|---|---|
 | `port is already allocated` al hacer `docker compose up` | Otro programa (u otro n8n) ya usa el puerto 5678, 8000 u 8025 | Ciérralo, o cambia el número de la **izquierda** en `docker-compose.yml` (por ejemplo `5679:5678`) |
-| La app crea el encargo pero no llega ningún correo | El flujo 01 no está **publicado** (la app usa la Production URL) | Pulsa **Publish** |
+| La app crea el encargo pero no llega ningún correo | El flujo 01 no está **publicado** (la app usa la Production URL) | Mira **Avisos a n8n** en la app: si dice 404, pulsa **Publish** en el flujo |
 | `The requested webhook ... is not registered` | Igual que el anterior, o has usado `/webhook-test/` fuera de *Listen for test event* | Publicar, o pulsar *Listen for test event* antes del `curl` |
 | `ECONNREFUSED 127.0.0.1` o `localhost` no responde (SMTP o API) | Estás usando `localhost` dentro de n8n | Usa `mailpit` y `http://pasteleria:8000` |
 | `401 Unauthorized` al llamar a la app | La credencial `API Pastelería` no tiene la clave de tu `.env` | Revisa Name `X-API-Key` y el valor |
