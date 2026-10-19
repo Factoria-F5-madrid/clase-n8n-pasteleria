@@ -2,7 +2,7 @@
 
 Clase práctica para aprender, paso a paso, a hacer lo que pide el **nivel esencial** del proyecto de la zapatería. Aquí se construye con un caso parecido (una pastelería con encargos de tartas) para que, cuando llegue el proyecto, ya hayas hecho cada pieza una vez.
 
-**Duración:** dos sesiones, unas 3 h 30 min en total.
+**Duración:** dos sesiones, unas 3 h 50 min en total.
 
 ---
 
@@ -56,13 +56,13 @@ Son **dos sesiones**, cada una en **su propia rama** de este repositorio. La ram
 
 | Sesión | Rama | Pasos | Duración | Al terminar tienes funcionando |
 |---|---|---|---|---|
-| **1** | `sesion-1` | 1 a 5 | ~1 h 45 | Todo levantado y conectado, los **avisos al cliente** (flujo 01) y el **cierre de caja** (flujo 02) |
+| **1** | `sesion-1` | 1 a 5 | ~1 h 50 | Todo levantado y conectado, los **avisos al cliente** (flujo 01) y el **cierre de caja** (flujo 02) |
 | **2** | `sesion-2` | 6 a 9 | ~2 h | **Aviso de errores** (flujo 00), **pagos por correo con IA** (flujo 03), un flujo hecho con el agente y todo subido a tu repositorio |
 
 **Cómo empezar cada sesión:**
 
 ```bash
-git clone <url-de-este-repositorio> clase-n8n-pasteleria
+git clone https://github.com/Factoria-F5-madrid/clase-n8n-pasteleria.git clase-n8n-pasteleria
 cd clase-n8n-pasteleria
 git switch sesion-1          # y en la segunda sesión: git switch sesion-2
 ```
