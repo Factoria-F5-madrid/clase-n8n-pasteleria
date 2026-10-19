@@ -1,0 +1,61 @@
+{
+  "id": "AvisarErrores001",
+  "name": "00 Avisar de errores",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "00000000-0000-0000-0000-00000000001a",
+      "name": "Si falla un flujo",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "pasteleria@lacuchara.example",
+        "toEmail": "marisa@lacuchara.example",
+        "subject": "=Ha fallado el flujo «{{ $json.workflow.name }}»",
+        "emailFormat": "text",
+        "text": "=Hola Marisa,\n\nUna automatización ha fallado.\n\nFlujo: {{ $json.workflow.name }}\nPaso: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nEjecución: {{ $json.execution.url }}\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "00000000-0000-0000-0000-00000000001b",
+      "name": "Avisar a la dueña",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        260,
+        200
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cred-smtp-0001",
+          "name": "Mailpit"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Si falla un flujo": {
+      "main": [
+        [
+          {
+            "node": "Avisar a la dueña",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

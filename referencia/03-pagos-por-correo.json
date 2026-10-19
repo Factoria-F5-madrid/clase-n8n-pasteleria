@@ -1,0 +1,344 @@
+{
+  "name": "03 Pagos por correo",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Correo del banco",
+        "formDescription": "Pega aquí el correo que ha llegado",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Correo",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-0000-0000-00000000000e",
+      "name": "Pegar correo",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "00000000-0000-0000-0000-0000000003e6"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.Correo }}",
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\"es_pago\": true, \"ordenante\": \"CARMEN RUIZ\", \"importe\": 12.5, \"forma\": \"bizum\", \"concepto\": \"tarta queso\"}",
+        "options": {
+          "systemPromptTemplate": "Eres un asistente que lee correos de un banco para una pastelería. Decide si el correo avisa de un pago recibido (Bizum o transferencia): es_pago=true; si es publicidad u otra cosa, es_pago=false. Extrae el nombre de quien paga (ordenante), el importe como número con punto decimal, la forma (bizum o transferencia) y el concepto. Si un dato no aparece, déjalo vacío. No inventes nada."
+        }
+      },
+      "id": "00000000-0000-0000-0000-00000000000f",
+      "name": "Extraer datos del correo",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "00000000-0000-0000-0000-000000000010",
+      "name": "Groq",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        240,
+        420
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "cred-groq-0001",
+          "name": "Groq"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-0000-0000-000000000011",
+              "leftValue": "={{ $json.output.es_pago }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-0000-0000-000000000012",
+      "name": "¿Es un pago?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://pasteleria:8000/api/encargos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "estado",
+              "value": "pendiente"
+            }
+          ]
+        }
+      },
+      "id": "00000000-0000-0000-0000-000000000013",
+      "name": "Encargos pendientes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        120
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-api-0001",
+          "name": "API Pastelería"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const datos = $('Extraer datos del correo').first().json.output;\nconst pendientes = $input.all().map(i => i.json).filter(e => e.id);\nconst norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').trim();\n\nlet candidatos = [];\nconst porNumero = norm(datos.concepto).match(/(?:encargo|pedido)\\s*(\\d+)/);\nif (porNumero) {\n  candidatos = pendientes.filter(e => e.id === Number(porNumero[1]));\n} else {\n  // Nombre: el primer nombre coincide y el siguiente apellido empieza igual (sirve \"JORGE M.\")\n  const t = norm(datos.ordenante).split(/\\s+/).filter(Boolean);\n  candidatos = pendientes.filter(e => {\n    const c = norm(e.cliente).split(/\\s+/);\n    return t.length >= 2 && c[0] === t[0] && c.slice(1).some(w => w.startsWith(t[1]) || t[1].startsWith(w));\n  });\n}\n\nconst base = { ordenante: datos.ordenante, importe: datos.importe, forma: datos.forma, concepto: datos.concepto };\nif (candidatos.length !== 1)\n  return [{ json: { ...base, decision: 'revisar', motivo: candidatos.length ? 'Hay varios encargos posibles' : 'No he encontrado ningún encargo pendiente de esa persona' } }];\nconst e = candidatos[0];\nif (datos.importe > e.pendiente)\n  return [{ json: { ...base, decision: 'revisar', encargo_id: e.id, motivo: `Paga ${datos.importe} € pero al encargo #${e.id} solo le faltan ${e.pendiente} €` } }];\nreturn [{ json: { ...base, decision: 'registrar', encargo_id: e.id, motivo: 'Coincide con un único encargo' } }];"
+      },
+      "id": "00000000-0000-0000-0000-000000000014",
+      "name": "Buscar el encargo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-0000-0000-000000000015",
+              "leftValue": "={{ $json.decision }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "registrar"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-0000-0000-000000000016",
+      "name": "¿Se puede registrar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://pasteleria:8000/api/encargos/{{ $json.encargo_id }}/pagos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"importe\": {{ $json.importe }}, \"forma_pago\": \"{{ $json.forma }}\" }"
+      },
+      "id": "00000000-0000-0000-0000-000000000017",
+      "name": "Registrar el pago",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        40
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-api-0001",
+          "name": "API Pastelería"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "pasteleria@lacuchara.example",
+        "toEmail": "marisa@lacuchara.example",
+        "subject": "=Pago para revisar: {{ $json.importe }} € de {{ $json.ordenante }}",
+        "emailFormat": "text",
+        "text": "=Hola Marisa,\n\nHa llegado un pago y no lo he registrado.\n\nMotivo: {{ $json.motivo }}\n\nOrdenante: {{ $json.ordenante }}\nImporte: {{ $json.importe }} €\nForma: {{ $json.forma }}\nConcepto: {{ $json.concepto }}\n\nRegístralo tú si es correcto.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "00000000-0000-0000-0000-000000000018",
+      "name": "Preguntar a la dueña",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1520,
+        220
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cred-smtp-0001",
+          "name": "Mailpit"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "00000000-0000-0000-0000-000000000019",
+      "name": "Ignorar correo",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        800,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "Pegar correo": {
+      "main": [
+        [
+          {
+            "node": "Extraer datos del correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extraer datos del correo",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer datos del correo": {
+      "main": [
+        [
+          {
+            "node": "¿Es un pago?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es un pago?": {
+      "main": [
+        [
+          {
+            "node": "Encargos pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorar correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encargos pendientes": {
+      "main": [
+        [
+          {
+            "node": "Buscar el encargo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar el encargo": {
+      "main": [
+        [
+          {
+            "node": "¿Se puede registrar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Se puede registrar?": {
+      "main": [
+        [
+          {
+            "node": "Registrar el pago",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preguntar a la dueña",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "AvisarErrores001"
+  },
+  "pinData": {}
+}
