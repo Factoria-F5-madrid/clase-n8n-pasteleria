@@ -376,7 +376,29 @@ Ahora **dos** nodos **Send Email** (credencial `Mailpit`, mismo remitente, `To` 
   - Subject: `Recibo de tu pago del encargo #{{ $json.body.datos.id }}`
   - Text: `Hola {{ $json.body.datos.cliente }}, hemos recibido {{ $json.body.datos.importe.toFixed(2) }} €. Te quedan por pagar {{ $json.body.datos.pendiente.toFixed(2) }} € antes de la entrega ({{ $json.body.datos.fecha_entrega }}).`
 
-Prueba el IF con dos `curl` (con *Listen for test event* activo antes de cada uno): uno con `"evento":"pago.registrado"` y `"estado":"pagado"`, y otro con `"estado":"pendiente"`. Cada uno debe seguir una rama distinta. (Añade `"importe":10` dentro de `datos` en ambos.)
+Prueba el IF con dos `curl`, uno por cada rama. Para cada uno:
+
+1. Cierra el nodo y pulsa **Execute workflow** (abajo): n8n se queda esperando un aviso, igual que antes.
+2. Pega el comando en tu terminal y pulsa Enter.
+3. Mira el lienzo: el camino que ha seguido el aviso se pone en verde, y el correo llega a Mailpit.
+
+**Rama «pagado»** (ya no debe nada: sale por *true*, «Tarta lista para recoger»):
+
+```bash
+curl -X POST http://localhost:5678/webhook-test/pasteleria \
+  -H "Content-Type: application/json" \
+  -d '{"evento":"pago.registrado","datos":{"id":99,"cliente":"Ana Prueba","email":"ana@example.com","tarta":"Tarta de queso","raciones":8,"precio":32,"pagado":32,"pendiente":0,"estado":"pagado","fecha_entrega":"2026-12-01","importe":10}}'
+```
+
+**Rama «pendiente»** (todavía debe algo: sale por *false*, «Recibo de pago»). Vuelve a pulsar **Execute workflow** antes de pegarlo:
+
+```bash
+curl -X POST http://localhost:5678/webhook-test/pasteleria \
+  -H "Content-Type: application/json" \
+  -d '{"evento":"pago.registrado","datos":{"id":99,"cliente":"Ana Prueba","email":"ana@example.com","tarta":"Tarta de queso","raciones":8,"precio":32,"pagado":10,"pendiente":22,"estado":"pendiente","fecha_entrega":"2026-12-01","importe":10}}'
+```
+
+La única diferencia entre los dos son `pagado`, `pendiente` y `estado`. El IF solo mira `estado`.
 
 
 ![El IF «¿Queda pagado?»: estado igual a `pagado`](imagenes/p4-07-if-pagado.jpg)
