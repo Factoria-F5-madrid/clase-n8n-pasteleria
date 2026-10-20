@@ -3,21 +3,16 @@
 import io
 from datetime import date
 
-from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
 
 import database
 import seed
-from controllers.seguridad import exigir_clave
 from models import encargo
-
-router = APIRouter(prefix="/api", tags=["utilidades"], dependencies=[Depends(exigir_clave)])
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
-@router.get("/excel", summary="Descargar todos los datos en un Excel (una hoja por tabla)")
 def excel():
     hojas = {
         "Encargos": (["id", "fecha", "cliente", "email", "tarta", "raciones", "precio", "pagado", "pendiente",
@@ -39,7 +34,6 @@ def excel():
                              headers={"Content-Disposition": f'attachment; filename="la-cuchara-{date.today()}.xlsx"'})
 
 
-@router.post("/reset", summary="Borra todo y vuelve a cargar los datos de ejemplo")
 def reset():
     database.vaciar()
     seed.cargar()
