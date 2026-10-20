@@ -1,17 +1,12 @@
-"""CONTROLADOR · Pagos: consultas sobre todos los pagos."""
+"""CONTROLADOR · Pagos: consultas sobre todos los pagos. Las URL están en routes/pagos.py."""
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import Response
 
-from controllers.seguridad import exigir_clave
 from models import pago
-from schemas.pago import PagoOut
-
-router = APIRouter(prefix="/api/pagos", tags=["consultas"], dependencies=[Depends(exigir_clave)])
 
 
-@router.get("", response_model=list[PagoOut], summary="Pagos entre dos fechas (incluidas)")
 def listar(response: Response, desde: date | None = None, hasta: date | None = None, orden: str = "asc",
            pagina: int | None = None, por_pagina: int = 25):
     """Sin `pagina` devuelve todos. `orden=desc` muestra primero los más recientes."""
