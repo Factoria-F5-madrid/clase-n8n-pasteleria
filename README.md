@@ -10,7 +10,7 @@ Clase práctica para aprender, paso a paso, a automatizar un negocio pequeño co
 
 **Pastelería La Cuchara** vende tartas por encargo. El cliente deja una **señal de al menos 10 €**, paga el resto antes de la entrega (máximo 30 días) y recoge su tarta. Hoy Marisa, la dueña, apunta todo a mano y revisa los avisos del banco para saber quién ha pagado.
 
-Ya tiene una **app** (carpeta `app/`) que guarda los encargos y los pagos. Nosotros no la tocamos: construimos con n8n **todo lo que pasa alrededor**.
+Ya tiene una **app** (carpetas `backend/` y `frontend/`) que guarda los encargos y los pagos. Nosotros no la tocamos: construimos con n8n **todo lo que pasa alrededor**.
 
 ```
                   La app avisa a n8n cuando pasa algo
@@ -88,6 +88,30 @@ Después abre el `README.md` de tu rama y sigue los pasos.
 
 ---
 
+## Cómo está hecha la app (por si tienes curiosidad)
+
+No tienes que tocarla, pero conviene entenderla porque **n8n va a hablar con ella**. Sigue el patrón **MVC**, que separa tres responsabilidades. Piensa en un restaurante:
+
+| Pieza | Carpeta | En el restaurante | Qué hace |
+|---|---|---|---|
+| **M**odelo | `backend/models/`, `backend/database.py` | La cocina | Guarda los datos y aplica las reglas (señal mínima de 10 €, entrega en 30 días...) |
+| Schemas | `backend/schemas/` | La comanda | La forma exacta de los datos que entran y salen (con Pydantic) |
+| **C**ontrolador | `backend/controllers/` | El camarero | Recibe la petición HTTP, se la pasa a la cocina y devuelve la respuesta |
+| **V**ista | `frontend/` | El comedor y la carta | Lo que ve y usa la dependienta: HTML, CSS y JavaScript |
+| `main.py` | `backend/main.py` | El encargado | Solo junta las piezas, no tiene lógica |
+
+La idea clave: **la interfaz no tiene reglas ni toca la base de datos**. Pide todo a la API, igual que lo hará n8n. Es como si la pantalla y n8n fueran dos clientes del mismo camarero:
+
+```
+ Pantalla (frontend/) ─┐
+                       ├──▶ API (controllers/) ──▶ models/ ──▶ base de datos
+ n8n ──────────────────┘
+```
+
+Por eso la carpeta se llama `frontend/` y no `templates/`: no son plantillas que rellena el servidor, es una interfaz que **consulta la API**.
+
+---
+
 ## Estructura de este repositorio
 
 ```
@@ -95,7 +119,15 @@ clase-n8n-pasteleria/
 ├── README.md              ← esta página (vista general)
 ├── docker-compose.yml     ← app + n8n + Mailpit
 ├── .env.example           ← copia a .env
-├── app/                   ← la app de la pastelería, con pantallas (no hace falta tocarla)
+├── backend/               ← la lógica de la app (no hace falta tocarla)
+│   ├── main.py            ← junta las piezas
+│   ├── models/            ← M: datos y reglas del negocio
+│   ├── schemas/           ← la forma de los datos (Pydantic)
+│   ├── controllers/       ← C: las rutas de la API
+│   ├── services/          ← los avisos a n8n
+│   └── tests/
+├── frontend/              ← V: la interfaz (HTML, CSS y JavaScript)
+├── Dockerfile             ← construye backend + frontend en una sola imagen
 ├── data/correos/          ← los 7 correos de ejemplo de la sesión 2
 ├── mis-flujos/            ← aquí guardas tus exportaciones de n8n
 ├── (sesion-1) referencia/ ← flujos 01 y 02 terminados

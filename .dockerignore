@@ -1,0 +1,10 @@
+.git
+.env
+**/__pycache__
+**/.pytest_cache
+*.db
+backend/tests
+data
+imagenes
+mis-flujos
+referencia
