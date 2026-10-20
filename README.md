@@ -147,6 +147,8 @@ La app es el **mostrador** de la pastelería: ahí se apuntan encargos y pagos. 
 
 Es lo que usará n8n. Pulsa **Authorize** (arriba a la derecha) y escribe el valor de `API_KEY` de tu `.env` (`cambia-esta-clave`). Prueba `GET /api/encargos` (**Try it out → Execute**): los mismos encargos, pero como datos.
 
+La pantalla que acabas de usar **también pide sus datos a esta API**: es un cliente más, igual que lo será n8n. Por eso, en el repositorio, la interfaz está en `frontend/` y la lógica en `backend/` (en el README de `main` tienes el esquema).
+
 ![El botón Authorize, arriba a la derecha](imagenes/p2-09-swagger-authorize-boton.jpg)
 *El botón Authorize, arriba a la derecha*
 
